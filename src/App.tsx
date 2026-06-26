@@ -182,6 +182,33 @@ export default function App() {
   const [selectedColor, setSelectedColor] = useState("");
   const [currentThumbIndex, setCurrentThumbIndex] = useState(0);
 
+  // Safe side-effect to reset and autoselect size/color when product path or ID changes
+  useEffect(() => {
+    if (routePath === "product") {
+      const prodId = routeQuery.id;
+      const product = products.find(p => p.id === prodId);
+      if (product) {
+        if (product.sizes && product.sizes.length > 0) {
+          setSelectedSize(product.sizes[0]);
+        } else {
+          setSelectedSize("");
+        }
+        if (product.colors && product.colors.length > 0) {
+          setSelectedColor(product.colors[0]);
+        } else {
+          setSelectedColor("");
+        }
+      } else {
+        setSelectedSize("");
+        setSelectedColor("");
+      }
+    } else {
+      setSelectedSize("");
+      setSelectedColor("");
+    }
+    setCurrentThumbIndex(0);
+  }, [routePath, routeQuery.id, products]);
+
   // --- DEVICE SECURITY STATE ---
   const [isDeviceAuthorized, setIsDeviceAuthorized] = useState<boolean>(() => {
     return localStorage.getItem("jz_device_authorized") === "true";
@@ -347,19 +374,14 @@ export default function App() {
       };
 
       saveProductToDb(updatedProduct)
-        .then(() => showToast("[ تم تحديث المنتج بنجاح في السحابة ]"))
+        .then(() => {
+          setProducts(prevProducts => prevProducts.map(p => p.id === editingProduct.id ? updatedProduct : p));
+          showToast("[ تم تحديث المنتج بنجاح في السحابة ]");
+        })
         .catch(err => {
           console.error("Error saving product to DB: ", err);
-          showToast("[ خطأ: فشل في تحديث المنتج في السحابة ]");
+          showToast("[ خطأ: فشل في تحديث المنتج في السحابة - قد تكون مساحة الصور كبيرة جداً ]");
         });
-
-      const updatedProducts = products.map(p => {
-        if (p.id === editingProduct.id) {
-          return updatedProduct;
-        }
-        return p;
-      });
-      setProducts(updatedProducts);
     } else {
       // Add mode
       const newId = formName.toLowerCase().replace(/[^a-z0-9\u0600-\u06FF]+/g, "-");
@@ -378,13 +400,14 @@ export default function App() {
       };
 
       saveProductToDb(newProduct)
-        .then(() => showToast("[ تم تأمين المنتج الجديد في السحابة بنجاح ]"))
+        .then(() => {
+          setProducts(prevProducts => [...prevProducts, newProduct]);
+          showToast("[ تم تأمين المنتج الجديد في السحابة بنجاح ]");
+        })
         .catch(err => {
           console.error("Error saving new product to DB: ", err);
-          showToast("[ خطأ: فشل في حفظ المنتج الجديد في السحابة ]");
+          showToast("[ خطأ: فشل في حفظ المنتج الجديد في السحابة - قد تكون مساحة الصور كرتينية أو كبيرة جداً ]");
         });
-
-      setProducts([...products, newProduct]);
     }
 
     // Reset Form
@@ -450,6 +473,11 @@ export default function App() {
 
     setCheckoutError("");
 
+    const orderItems = cart.map(item => ({
+      ...item,
+      image: "" // Strip heavy base64 strings from Firestore order records to prevent exceeding 1MB limit
+    }));
+
     // Create the order object
     const newOrder: Order = {
       id: "JZ-" + Math.floor(100000 + Math.random() * 900000),
@@ -459,7 +487,7 @@ export default function App() {
       wilaya: checkoutWilaya,
       address: checkoutAddress,
       notes: checkoutNotes,
-      items: [...cart],
+      items: orderItems,
       total: cartSubtotal,
       status: "Pending"
     };
@@ -471,6 +499,7 @@ export default function App() {
       })
       .catch(err => {
         console.error("Error saving order to Firestore: ", err);
+        showToast("[ خطأ: فشل في تأمين الطلب سحابياً ]");
       });
 
     setOrders([newOrder, ...orders]);
@@ -486,7 +515,7 @@ export default function App() {
       msg += `📝 ملاحظات: ${newOrder.notes}\n`;
     }
     msg += `\n*المنتجات المطلوبة:*\n`;
-    newOrder.items.forEach((item, index) => {
+    cart.forEach((item, index) => {
       msg += `${index + 1}. *${item.name}*\n`;
       msg += `   المقاس: [ ${item.size} ] | اللون: ${item.color}\n`;
       msg += `   الكمية: ${item.quantity} x ${formatPrice(item.price)} = ${formatPrice(item.price * item.quantity)}\n\n`;
@@ -507,8 +536,20 @@ export default function App() {
     setCheckoutAddress("");
     setCheckoutNotes("");
 
-    // Open WhatsApp
-    window.open(whatsappUrl, "_blank");
+    // Open WhatsApp safely (could be blocked by popup blocker or iframe sandboxing)
+    try {
+      const newTab = window.open(whatsappUrl, "_blank");
+      if (!newTab) {
+        window.location.href = whatsappUrl;
+      }
+    } catch (e) {
+      console.error("Popup blocked or window.open failed: ", e);
+      try {
+        window.location.href = whatsappUrl;
+      } catch (err) {
+        console.error("Redirection failed: ", err);
+      }
+    }
 
     // Redirect to Confirmation
     navigate("#confirmation");
@@ -974,13 +1015,7 @@ export default function App() {
                   );
                 }
 
-                // Autoselect size and color if not selected yet
-                if (!selectedSize && product.sizes.length > 0) {
-                  setSelectedSize(product.sizes[0]);
-                }
-                if (!selectedColor && product.colors.length > 0) {
-                  setSelectedColor(product.colors[0]);
-                }
+                // Autoselection is handled safely in useEffect to prevent render-phase state update loops
 
                 // Use actual supplementary images if available, otherwise fallback to high quality mock details
                 const cleanSuppImages = (product.images || []).filter(img => img && img.trim() !== "");
@@ -2162,19 +2197,22 @@ export default function App() {
                                   <div className="space-y-2 text-xs">
                                     <p className="font-mono text-[10px] text-accent-blue uppercase tracking-wider">[ تفاصيل المنتجات ]</p>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                      {order.items.map((item, idx) => (
-                                        <div key={idx} className="flex items-center gap-3 bg-secondary-bg/20 p-2 border border-border-custom/50">
-                                          <div className="w-8 h-10 bg-primary-bg p-0.5 flex items-center justify-center flex-shrink-0">
-                                            <img src={item.image} alt="" className="max-h-full max-w-full object-contain" referrerPolicy="no-referrer" />
+                                      {order.items.map((item, idx) => {
+                                        const imageSrc = item.image || (products.find(p => p.id === item.productId)?.image || "");
+                                        return (
+                                          <div key={idx} className="flex items-center gap-3 bg-secondary-bg/20 p-2 border border-border-custom/50">
+                                            <div className="w-8 h-10 bg-primary-bg p-0.5 flex items-center justify-center flex-shrink-0">
+                                              <img src={imageSrc} alt="" className="max-h-full max-w-full object-contain" referrerPolicy="no-referrer" />
+                                            </div>
+                                            <div>
+                                              <p className="font-bold text-white uppercase line-clamp-1 text-[11px]">{item.name}</p>
+                                              <p className="font-mono text-[9px] text-text-muted">
+                                                المقاس: {item.size} | الكمية: {item.quantity} | {item.color}
+                                              </p>
+                                            </div>
                                           </div>
-                                          <div>
-                                            <p className="font-bold text-white uppercase line-clamp-1 text-[11px]">{item.name}</p>
-                                            <p className="font-mono text-[9px] text-text-muted">
-                                              المقاس: {item.size} | الكمية: {item.quantity} | {item.color}
-                                            </p>
-                                          </div>
-                                        </div>
-                                      ))}
+                                        );
+                                      })}
                                     </div>
                                   </div>
 
