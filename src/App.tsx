@@ -1533,7 +1533,7 @@ export default function App() {
                         </form>
                         
                         <p className="font-mono text-[9px] text-text-muted">
-                          رمز المرور الافتراضي: "rawad28112005"
+                          رمز المرور الافتراضي: "اكتب الرمز للدخول"
                         </p>
                       </div>
                     </div>
