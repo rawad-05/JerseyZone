@@ -1743,7 +1743,7 @@ export default function App() {
                                     <option value="الدوري الإسباني">الدوري الإسباني</option>
                                     <option value="الدوري الإنجليزي">الدوري الإنجليزي</option>
                                     <option value="الدوري الفرنسي">الدوري الفرنسي</option>
-                                    <option value="الدوريات الإفريقية">الدوريات الأفريقية</option>
+                                    <option value="الدوريات الأفريقية">الدوريات الأفريقية</option>
                                     <option value="الأطقم الكلاسيكية">الأطقم الكلاسيكية</option>
                                   </select>
                                 </div>
