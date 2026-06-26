@@ -133,6 +133,13 @@ export default function App() {
   const [selectedColor, setSelectedColor] = useState("");
   const [currentThumbIndex, setCurrentThumbIndex] = useState(0);
 
+  // --- DEVICE SECURITY STATE ---
+  const [isDeviceAuthorized, setIsDeviceAuthorized] = useState<boolean>(() => {
+    return localStorage.getItem("jz_device_authorized") === "true";
+  });
+  const [deviceRegCode, setDeviceRegCode] = useState("");
+  const [deviceRegError, setDeviceRegError] = useState("");
+
   // --- ADMIN PORTAL STATE ---
   const [isAdminAuth, setIsAdminAuth] = useState(false);
   const [adminPassword, setAdminPassword] = useState("");
@@ -147,6 +154,7 @@ export default function App() {
   const [formPrice, setFormPrice] = useState("");
   const [formDescription, setFormDescription] = useState("");
   const [formImage, setFormImage] = useState("");
+  const [formSupplementaryImages, setFormSupplementaryImages] = useState<string[]>([]);
   const [formSizes, setFormSizes] = useState<string[]>(["S", "M", "L", "XL"]);
   const [formColors, setFormColors] = useState("");
   const [formFeatured, setFormFeatured] = useState(false);
@@ -219,6 +227,30 @@ export default function App() {
     showToast("[ تم إزالة القطعة من السلة ]");
   };
 
+  const handleRegisterDevice = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (deviceRegCode === "rawad28112005") {
+      localStorage.setItem("jz_device_authorized", "true");
+      setIsDeviceAuthorized(true);
+      setDeviceRegError("");
+      setDeviceRegCode("");
+      showToast("[ تم ترخيص هذا الجهاز بنجاح كمشرف معتمد ]");
+    } else {
+      setDeviceRegError("[ رمز تفويض الجهاز غير صحيح ]");
+    }
+  };
+
+  const handleRevokeDeviceAuth = () => {
+    if (window.confirm("هل أنت متأكد من إلغاء تفويض هذا الجهاز؟ سيتم إخفاء بوابة الأدمن تماماً عن هذا الجهاز.")) {
+      localStorage.removeItem("jz_device_authorized");
+      setIsDeviceAuthorized(false);
+      setIsAdminAuth(false);
+      setAdminPassword("");
+      navigate("#home");
+      showToast("[ تم إلغاء تفويض الجهاز وتسجيل الخروج بنجاح ]");
+    }
+  };
+
   const handleAdminLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (adminPassword === "rawad28112005") {
@@ -246,6 +278,9 @@ export default function App() {
       ? formColors.split(",").map(c => c.trim()).filter(c => c.length > 0)
       : ["Default"];
 
+    // Filter out empty URLs from supplementary images
+    const supplementaryImagesFiltered = formSupplementaryImages.map(img => img.trim()).filter(img => img.length > 0);
+
     if (editingProduct) {
       // Edit mode
       const updatedProducts = products.map(p => {
@@ -257,6 +292,7 @@ export default function App() {
             category: formCategory,
             description: formDescription,
             image: formImage,
+            images: supplementaryImagesFiltered,
             sizes: formSizes,
             colors: colorsArray,
             featured: formFeatured,
@@ -277,6 +313,7 @@ export default function App() {
         category: formCategory,
         description: formDescription || "قميص رياضي فاخر بجودة عالية من مستودعات JERSEY ZONE الرسمية.",
         image: formImage,
+        images: supplementaryImagesFiltered,
         sizes: formSizes,
         colors: colorsArray,
         featured: formFeatured,
@@ -298,6 +335,7 @@ export default function App() {
     setFormPrice("");
     setFormDescription("");
     setFormImage("");
+    setFormSupplementaryImages([]);
     setFormSizes(["S", "M", "L", "XL"]);
     setFormColors("");
     setFormFeatured(false);
@@ -312,6 +350,7 @@ export default function App() {
     setFormPrice(product.price.toString());
     setFormDescription(product.description);
     setFormImage(product.image);
+    setFormSupplementaryImages(product.images || []);
     setFormSizes(product.sizes);
     setFormColors(product.colors.join(", "));
     setFormFeatured(product.featured);
@@ -478,24 +517,28 @@ export default function App() {
                   الأطقم
                   <span className="text-accent-blue mr-1 opacity-0 group-hover:opacity-100 transition-opacity">]</span>
                 </a>
-                <a href="#admin" className="px-3 py-2 hover:text-white transition-colors relative group">
-                  <span className="text-accent-blue ml-1 opacity-0 group-hover:opacity-100 transition-opacity">[</span>
-                 الأدمن
-                  <span className="text-accent-blue mr-1 opacity-0 group-hover:opacity-100 transition-opacity">]</span>
-                </a>
+                {isDeviceAuthorized && (
+                  <a href="#admin" className="px-3 py-2 hover:text-white transition-colors relative group">
+                    <span className="text-accent-blue ml-1 opacity-0 group-hover:opacity-100 transition-opacity">[</span>
+                    الأدمن
+                    <span className="text-accent-blue mr-1 opacity-0 group-hover:opacity-100 transition-opacity">]</span>
+                  </a>
+                )}
               </nav>
 
               {/* Right Side Icons */}
               <div className="flex items-center gap-4">
                 
                 {/* Admin Quicklink */}
-                <a 
-                  href="#admin" 
-                  title="واجهة الأدمن "
-                  className="p-2 text-text-secondary hover:text-accent-blue transition-colors relative"
-                >
-                  <Settings size={20} />
-                </a>
+                {isDeviceAuthorized && (
+                  <a 
+                    href="#admin" 
+                    title="واجهة الأدمن "
+                    className="p-2 text-text-secondary hover:text-accent-blue transition-colors relative"
+                  >
+                    <Settings size={20} />
+                  </a>
+                )}
 
                 {/* Cart Icon & Badge */}
                 <a 
@@ -557,14 +600,16 @@ export default function App() {
                       <span>[  سلة المشتريات ({totalCartItems}) ]</span>
                       <ChevronLeft size={16} />
                     </a>
-                    <a 
-                      href="#admin" 
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="py-2 hover:text-white flex justify-between text-accent-blue"
-                    >
-                      <span>[  واجهة الأدمن ]</span>
-                      <ChevronLeft size={16} />
-                    </a>
+                    {isDeviceAuthorized && (
+                      <a 
+                        href="#admin" 
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="py-2 hover:text-white flex justify-between text-accent-blue"
+                      >
+                        <span>[  واجهة الأدمن ]</span>
+                        <ChevronLeft size={16} />
+                      </a>
+                    )}
                   </div>
                 </motion.div>
               )}
@@ -848,13 +893,18 @@ export default function App() {
                   setSelectedColor(product.colors[0]);
                 }
 
-                // Generate static thumbnails for decorative visual style
-                const mockThumbnails = [
+                // Use actual supplementary images if available, otherwise fallback to high quality mock details
+                const cleanSuppImages = (product.images || []).filter(img => img && img.trim() !== "");
+                const productImages = [
                   product.image,
-                  `https://placehold.co/600x800/2B3A4A/FFFFFF?text=${encodeURIComponent(product.name.replace(/\s+/g, "+") + "+DETAIL")}`,
-                  `https://placehold.co/600x800/3D5166/A8C4D8?text=GEAR+CLOSEUP`,
-                  `https://placehold.co/600x800/4A6278/FFFFFF?text=ZONE+OFFICIAL`
+                  ...(cleanSuppImages.length > 0 ? cleanSuppImages : [
+                    `https://placehold.co/600x800/2B3A4A/FFFFFF?text=${encodeURIComponent(product.name.replace(/\s+/g, "+") + "+DETAIL")}`,
+                    `https://placehold.co/600x800/3D5166/A8C4D8?text=GEAR+CLOSEUP`,
+                    `https://placehold.co/600x800/4A6278/FFFFFF?text=ZONE+OFFICIAL`
+                  ])
                 ];
+                
+                const activeThumbIndex = currentThumbIndex >= productImages.length ? 0 : currentThumbIndex;
 
                 return (
                   <motion.div
@@ -884,12 +934,12 @@ export default function App() {
                         
                         {/* Secondary Thumbnails Strips */}
                         <div className="order-2 md:order-1 md:col-span-2 flex md:flex-col gap-3 justify-center md:justify-start">
-                          {mockThumbnails.map((thumbUrl, idx) => (
+                          {productImages.map((thumbUrl, idx) => (
                             <button
                               key={idx}
                               onClick={() => setCurrentThumbIndex(idx)}
                               className={`aspect-3/4 bg-secondary-bg/50 border overflow-hidden p-2 transition-all ${
-                                currentThumbIndex === idx ? "border-accent-blue" : "border-border-custom hover:border-white/50"
+                                activeThumbIndex === idx ? "border-accent-blue" : "border-border-custom hover:border-white/50"
                               }`}
                               style={{ maxHeight: "100px" }}
                             >
@@ -906,13 +956,13 @@ export default function App() {
                         {/* Large Main View */}
                         <div className="order-1 md:order-2 md:col-span-10 aspect-3/4 bg-card-bg/20 border border-border-custom p-8 flex items-center justify-center relative overflow-hidden">
                           <img 
-                            src={mockThumbnails[currentThumbIndex]} 
+                            src={productImages[activeThumbIndex]} 
                             alt={product.name}
                             referrerPolicy="no-referrer"
                             className="max-h-[550px] max-w-full object-contain"
                           />
                           <div className="absolute bottom-4 left-4 font-mono text-[10px] text-text-muted uppercase">
-                            [ معاينة الصورة {currentThumbIndex + 1}/4 ]
+                            [ معاينة الصورة {activeThumbIndex + 1}/{productImages.length} ]
                           </div>
                         </div>
 
@@ -1395,8 +1445,53 @@ export default function App() {
                   exit={{ opacity: 0 }}
                   className="max-w-7xl mx-auto px-4 md:px-8 py-16 w-full flex-1 flex flex-col"
                 >
-                  {/* ADMIN PASSWORD CHALLENGE */}
-                  {!isAdminAuth ? (
+                  {/* ADMIN DOUBLE-VERIFICATION CHALLENGE */}
+                  {!isDeviceAuthorized ? (
+                    <div className="max-w-md mx-auto w-full py-16">
+                      <div className="border border-border-custom bg-secondary-bg/20 p-8 space-y-6 text-center">
+                        <div className="flex justify-center text-accent-blue">
+                          <ShieldAlert size={44} className="animate-pulse" />
+                        </div>
+                        <div>
+                          <span className="font-mono text-[10px] text-accent-blue uppercase">[ نظام الأمان وتفويض الأجهزة ]</span>
+                          <h1 className="font-display text-2xl tracking-tight text-white uppercase mt-1">
+                            جهاز غير مصرح به
+                          </h1>
+                          <p className="text-xs text-text-secondary mt-3 leading-relaxed">
+                            هذا الهاتف أو الكمبيوتر غير مسجل في قائمة الأجهزة المسموح لها بالوصول إلى لوحة الأدمن. يرجى إدخال الرمز السري لتفويض هذا الجهاز بشكل دائم.
+                          </p>
+                        </div>
+
+                        {deviceRegError && (
+                          <div className="bg-red-500/10 border border-red-500/30 text-red-400 font-mono text-[11px] py-2 uppercase">
+                            {deviceRegError}
+                          </div>
+                        )}
+
+                        <form onSubmit={handleRegisterDevice} className="space-y-4 text-right">
+                          <div>
+                            <label className="block font-mono text-[11px] text-text-secondary uppercase mb-2">
+                              رمز تسجيل الجهاز المصرح به
+                            </label>
+                            <input 
+                              type="password"
+                              value={deviceRegCode}
+                              onChange={(e) => setDeviceRegCode(e.target.value)}
+                              placeholder="••••••••••••••"
+                              className="w-full bg-primary-bg border border-border-custom text-white px-4 py-3 text-sm focus:outline-hidden focus:border-white font-mono text-center tracking-widest text-left"
+                            />
+                          </div>
+
+                          <button
+                            type="submit"
+                            className="w-full bg-white hover:bg-accent-blue text-primary-bg font-mono text-xs uppercase tracking-widest py-3.5 font-bold transition-colors cursor-pointer"
+                          >
+                            ربط وترخيص هذا الجهاز
+                          </button>
+                        </form>
+                      </div>
+                    </div>
+                  ) : !isAdminAuth ? (
                     <div className="max-w-md mx-auto w-full py-16">
                       <div className="border border-border-custom bg-secondary-bg/20 p-8 space-y-6 text-center">
                         <div className="flex justify-center text-accent-blue">
@@ -1425,7 +1520,7 @@ export default function App() {
                               value={adminPassword}
                               onChange={(e) => setAdminPassword(e.target.value)}
                               placeholder="••••••••••••••"
-                              className="w-full bg-primary-bg border border-border-custom text-white px-4 py-3 text-sm focus:outline-hidden focus:border-white font-mono text-center tracking-widest"
+                              className="w-full bg-primary-bg border border-border-custom text-white px-4 py-3 text-sm focus:outline-hidden focus:border-white font-mono text-center tracking-widest text-left"
                             />
                           </div>
 
@@ -1583,7 +1678,7 @@ export default function App() {
                                 {/* Image URL */}
                                 <div>
                                   <label className="block font-mono text-[11px] text-text-secondary uppercase mb-1.5">
-                                    رابط صورة المنتج *
+                                    رابط صورة المنتج الرئيسي *
                                   </label>
                                   <input 
                                     type="text"
@@ -1601,6 +1696,53 @@ export default function App() {
                                       onClick={() => setFormImage("https://placehold.co/600x800/3D5166/FFFFFF?text=JERSEY")}
                                     >
                                       تعيين رابط تجريبي
+                                    </button>
+                                  </div>
+                                </div>
+
+                                {/* Supplementary Images URL Manager */}
+                                <div className="md:col-span-2 border border-border-custom bg-secondary-bg/10 p-4 space-y-3 text-right">
+                                  <label className="block font-mono text-[11px] text-accent-blue uppercase font-bold">
+                                    صور إضافية للمنتج (اختياري - لمعاينة تفاصيل أخرى وزوايا مختلفة)
+                                  </label>
+                                  <p className="text-[10px] text-text-secondary leading-relaxed">
+                                    يمكنك إضافة روابط لصور إضافية لتمكين الزبائن من تصفح صور متعددة لهذا الطقم في صفحة التفاصيل.
+                                  </p>
+                                  <div className="space-y-2">
+                                    {formSupplementaryImages.map((imgUrl, index) => (
+                                      <div key={index} className="flex gap-2 items-center">
+                                        <span className="font-mono text-xs text-text-muted">#{index + 1}</span>
+                                        <input 
+                                          type="text"
+                                          value={imgUrl}
+                                          onChange={(e) => {
+                                            const updated = [...formSupplementaryImages];
+                                            updated[index] = e.target.value;
+                                            setFormSupplementaryImages(updated);
+                                          }}
+                                          placeholder="https://images.unsplash.com/..."
+                                          className="flex-1 bg-primary-bg border border-border-custom text-white px-3 py-2 text-xs font-mono focus:outline-hidden focus:border-white text-left"
+                                        />
+                                        <button 
+                                          type="button" 
+                                          onClick={() => {
+                                            setFormSupplementaryImages(formSupplementaryImages.filter((_, idx) => idx !== index));
+                                          }}
+                                          className="p-2 border border-red-500/30 text-red-400 hover:bg-red-500 hover:text-black transition-all cursor-pointer flex items-center justify-center"
+                                          title="حذف هذا الرابط"
+                                        >
+                                          <Trash2 size={14} />
+                                        </button>
+                                      </div>
+                                    ))}
+                                    
+                                    <button
+                                      type="button"
+                                      onClick={() => setFormSupplementaryImages([...formSupplementaryImages, ""])}
+                                      className="w-full border border-dashed border-border-custom/80 hover:border-accent-blue text-text-secondary hover:text-accent-blue py-2.5 text-xs font-mono transition-colors cursor-pointer flex items-center justify-center gap-2"
+                                    >
+                                      <Plus size={14} />
+                                      <span>إضافة رابط صورة إضافية جديدة</span>
                                     </button>
                                   </div>
                                 </div>
