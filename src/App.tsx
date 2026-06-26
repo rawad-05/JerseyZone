@@ -27,7 +27,8 @@ import {
   Lock,
   Filter,
   CheckSquare,
-  Square
+  Square,
+  Upload
 } from "lucide-react";
 
 export default function App() {
@@ -1680,14 +1681,50 @@ export default function App() {
                                   <label className="block font-mono text-[11px] text-text-secondary uppercase mb-1.5">
                                     رابط صورة المنتج الرئيسي *
                                   </label>
-                                  <input 
-                                    type="text"
-                                    required
-                                    value={formImage}
-                                    onChange={(e) => setFormImage(e.target.value)}
-                                    placeholder="https://images.unsplash.com/..."
-                                    className="w-full bg-primary-bg border border-border-custom text-white px-4 py-2.5 text-xs font-mono focus:outline-hidden focus:border-white text-left"
-                                  />
+                                  <div className="flex gap-2">
+                                    <input 
+                                      type="text"
+                                      required
+                                      value={formImage}
+                                      onChange={(e) => setFormImage(e.target.value)}
+                                      placeholder="https://images.unsplash.com/..."
+                                      className="flex-1 bg-primary-bg border border-border-custom text-white px-4 py-2.5 text-xs font-mono focus:outline-hidden focus:border-white text-left"
+                                    />
+                                    <label className="bg-white hover:bg-accent-blue text-primary-bg px-4 py-2.5 text-xs font-mono font-bold transition-colors cursor-pointer flex items-center gap-2 shrink-0">
+                                      <Upload size={14} />
+                                      <span>رفع صورة</span>
+                                      <input 
+                                        type="file" 
+                                        accept="image/*" 
+                                        className="hidden" 
+                                        onChange={(e) => {
+                                          const file = e.target.files?.[0];
+                                          if (file) {
+                                            const reader = new FileReader();
+                                            reader.onloadend = () => {
+                                              if (typeof reader.result === "string") {
+                                                setFormImage(reader.result);
+                                                showToast("[ تم رفع الصورة الرئيسية من الاستوديو بنجاح ]");
+                                              }
+                                            };
+                                            reader.readAsDataURL(file);
+                                          }
+                                        }} 
+                                      />
+                                    </label>
+                                  </div>
+                                  {formImage && formImage.startsWith("data:image/") && (
+                                    <div className="mt-2 flex items-center justify-between bg-accent-blue/10 border border-accent-blue/30 px-3 py-1.5 text-[10px] font-mono text-accent-blue">
+                                      <span>✓ صورة محملة محلياً (Base64)</span>
+                                      <button 
+                                        type="button" 
+                                        onClick={() => setFormImage("")}
+                                        className="underline hover:text-white animate-pulse"
+                                      >
+                                        إزالة
+                                      </button>
+                                    </div>
+                                  )}
                                   <div className="flex gap-2 mt-1.5 font-mono text-[9px] text-text-muted">
                                     <span>رابط تجريبي مقترح:</span>
                                     <button 
@@ -1702,11 +1739,39 @@ export default function App() {
 
                                 {/* Supplementary Images URL Manager */}
                                 <div className="md:col-span-2 border border-border-custom bg-secondary-bg/10 p-4 space-y-3 text-right">
-                                  <label className="block font-mono text-[11px] text-accent-blue uppercase font-bold">
-                                    صور إضافية للمنتج (اختياري - لمعاينة تفاصيل أخرى وزوايا مختلفة)
+                                  <label className="block font-mono text-[11px] text-accent-blue uppercase font-bold flex justify-between items-center">
+                                    <span>صور إضافية للمنتج (اختياري - لمعاينة تفاصيل أخرى وزوايا مختلفة)</span>
+                                    <label className="bg-accent-blue/20 hover:bg-accent-blue hover:text-primary-bg text-accent-blue border border-accent-blue/30 px-3 py-1 text-[10px] font-mono font-bold transition-all cursor-pointer flex items-center gap-1.5">
+                                      <Upload size={12} />
+                                      <span>رفع من الاستوديو</span>
+                                      <input 
+                                        type="file" 
+                                        accept="image/*" 
+                                        multiple
+                                        className="hidden" 
+                                        onChange={(e) => {
+                                          const files = e.target.files;
+                                          if (files && files.length > 0) {
+                                            const promises = Array.from(files).map((file: File) => {
+                                              return new Promise<string>((resolve) => {
+                                                const reader = new FileReader();
+                                                reader.onloadend = () => {
+                                                  resolve(reader.result as string);
+                                                };
+                                                reader.readAsDataURL(file);
+                                              });
+                                            });
+                                            Promise.all(promises).then(base64s => {
+                                              setFormSupplementaryImages([...formSupplementaryImages, ...base64s]);
+                                              showToast(`[ تم رفع ${base64s.length} صور إضافية من الاستوديو ]`);
+                                            });
+                                          }
+                                        }} 
+                                      />
+                                    </label>
                                   </label>
                                   <p className="text-[10px] text-text-secondary leading-relaxed">
-                                    يمكنك إضافة روابط لصور إضافية لتمكين الزبائن من تصفح صور متعددة لهذا الطقم في صفحة التفاصيل.
+                                    يمكنك إضافة روابط لصور إضافية أو اختيار ملفات مباشرة من استوديو هاتفك لتمكين الزبائن من تصفح صور متعددة لهذا الطقم في صفحة التفاصيل.
                                   </p>
                                   <div className="space-y-2">
                                     {formSupplementaryImages.map((imgUrl, index) => (
@@ -1723,12 +1788,15 @@ export default function App() {
                                           placeholder="https://images.unsplash.com/..."
                                           className="flex-1 bg-primary-bg border border-border-custom text-white px-3 py-2 text-xs font-mono focus:outline-hidden focus:border-white text-left"
                                         />
+                                        {imgUrl && imgUrl.startsWith("data:image/") && (
+                                          <span className="text-[9px] text-accent-blue font-mono shrink-0 bg-accent-blue/10 px-1.5 py-1">مرفق محلي</span>
+                                        )}
                                         <button 
                                           type="button" 
                                           onClick={() => {
                                             setFormSupplementaryImages(formSupplementaryImages.filter((_, idx) => idx !== index));
                                           }}
-                                          className="p-2 border border-red-500/30 text-red-400 hover:bg-red-500 hover:text-black transition-all cursor-pointer flex items-center justify-center"
+                                          className="p-2 border border-red-500/30 text-red-400 hover:bg-red-500 hover:text-black transition-all cursor-pointer flex items-center justify-center shrink-0"
                                           title="حذف هذا الرابط"
                                         >
                                           <Trash2 size={14} />
