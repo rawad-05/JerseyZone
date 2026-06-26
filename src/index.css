@@ -1,0 +1,40 @@
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Cairo", sans-serif;
+  --font-display: "Cairo", sans-serif;
+  --font-mono: "Space Mono", monospace;
+
+  --color-primary-bg: #2B3A4A;
+  --color-secondary-bg: #3D5166;
+  --color-card-bg: #4A6278;
+  --color-accent-blue: #A8C4D8;
+  --color-text-primary: #FFFFFF;
+  --color-text-secondary: #B0C4D4;
+  --color-text-muted: #7A9BB0;
+  --color-border-custom: rgba(168, 196, 216, 0.2);
+}
+
+/* Custom scrollbar and minor global styles */
+body {
+  background-color: #2B3A4A;
+  color: #FFFFFF;
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #2B3A4A;
+}
+::-webkit-scrollbar-thumb {
+  background: #4A6278;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #A8C4D8;
+}
