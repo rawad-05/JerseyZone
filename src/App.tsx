@@ -11,7 +11,7 @@ import {
   getSettingsFromDb, 
   saveSettingsToDb 
 } from "./firebase";
-import { parseHash, formatPrice } from "./utils";
+import { parseHash, formatPrice, compressImage } from "./utils";
 import { 
   ShoppingBag, 
   Trash2, 
@@ -1788,14 +1788,16 @@ export default function App() {
                                         onChange={(e) => {
                                           const file = e.target.files?.[0];
                                           if (file) {
-                                            const reader = new FileReader();
-                                            reader.onloadend = () => {
-                                              if (typeof reader.result === "string") {
-                                                setFormImage(reader.result);
-                                                showToast("[ تم رفع الصورة الرئيسية من الاستوديو بنجاح ]");
-                                              }
-                                            };
-                                            reader.readAsDataURL(file);
+                                            showToast("[ جاري ضغط ومعالجة الصورة... ]");
+                                            compressImage(file)
+                                              .then((compressedBase64) => {
+                                                setFormImage(compressedBase64);
+                                                showToast("[ تم رفع وضغط الصورة الرئيسية بنجاح ]");
+                                              })
+                                              .catch((err) => {
+                                                console.error(err);
+                                                showToast("[ خطأ: فشل في معالجة أو ضغط الصورة ]");
+                                              });
                                           }
                                         }} 
                                       />
@@ -1840,19 +1842,19 @@ export default function App() {
                                         onChange={(e) => {
                                           const files = e.target.files;
                                           if (files && files.length > 0) {
+                                            showToast("[ جاري ضغط ومعالجة الصور الإضافية... ]");
                                             const promises = Array.from(files).map((file: File) => {
-                                              return new Promise<string>((resolve) => {
-                                                const reader = new FileReader();
-                                                reader.onloadend = () => {
-                                                  resolve(reader.result as string);
-                                                };
-                                                reader.readAsDataURL(file);
+                                              return compressImage(file);
+                                            });
+                                            Promise.all(promises)
+                                              .then(base64s => {
+                                                setFormSupplementaryImages([...formSupplementaryImages, ...base64s]);
+                                                showToast(`[ تم رفع وضغط ${base64s.length} صور إضافية بنجاح ]`);
+                                              })
+                                              .catch((err) => {
+                                                console.error(err);
+                                                showToast("[ خطأ: فشل في معالجة أو ضغط الصور الإضافية ]");
                                               });
-                                            });
-                                            Promise.all(promises).then(base64s => {
-                                              setFormSupplementaryImages([...formSupplementaryImages, ...base64s]);
-                                              showToast(`[ تم رفع ${base64s.length} صور إضافية من الاستوديو ]`);
-                                            });
                                           }
                                         }} 
                                       />
