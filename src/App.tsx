@@ -764,16 +764,16 @@ export default function App() {
                       {/* Side Decorative Widget */}
                       <div className="hidden lg:flex lg:col-span-4 flex-col items-start text-right space-y-10 border-r border-border-custom/50 pr-8 font-mono">
                         <div>
-                          <p className="text-accent-blue text-xs uppercase tracking-widest font-bold mb-1">[ المواصفات ]</p>
-                          <p className="text-white text-sm">قصّة عصرية للشارع / أداء رياضي</p>
+                          <p className="text-accent-blue text-xs uppercase tracking-widest font-bold mb-1">[]</p>
+                          <p className="text-white text-sm">اطلب الأن واستمتع بتجربة تسوق سهلة وأمنة </p>
                         </div>
                         <div>
                           <p className="text-accent-blue text-xs uppercase tracking-widest font-bold mb-1">[ الشحن ]</p>
                           <p className="text-white text-sm">توصيل لكافة المدن الليبية</p>
                         </div>
                         <div>
-                          <p className="text-accent-blue text-xs uppercase tracking-widest font-bold mb-1">[ الفرع الرئيسي ]</p>
-                          <p className="text-white text-sm">طرابلس، ليبيا</p>
+                          <p className="text-accent-blue text-xs uppercase tracking-widest font-bold mb-1">[ شغفك يبدأ من القميص ]</p>
+                          <p className="text-white text-sm">الكمية محدودة احجز طقمك قبل نفاذه</p>
                         </div>
                       </div>
 
@@ -1164,16 +1164,16 @@ export default function App() {
                           <div className="grid grid-cols-2 gap-4 text-xs font-mono pt-2">
                             <div className="border border-border-custom/50 p-3">
                               <span className="text-text-muted block text-[9px] mb-1">[ المواد ]</span>
-                              <span className="text-white text-[11px]">100% بوليستر معاد تدويره</span>
+                              <span className="text-white text-[11px]">خامات عالية الجودة لراحة تدوم طوال اليوم</span>
                             </div>
                             <div className="border border-border-custom/50 p-3">
-                              <span className="text-text-muted block text-[9px] mb-1">[ إرشادات الغسيل ]</span>
-                              <span className="text-white text-[11px]">غسيل آلي بماء بارد</span>
+                              <span className="text-text-muted block text-[9px] mb-1">[ رضا العملاء هو اولويتنا]</span>
+                              <span className="text-white text-[11px]">اختر فريقك والباقي علينا</span>
                             </div>
                           </div>
 
                           <p className="text-text-muted font-mono text-[10px] tracking-wide uppercase">
-                            🚚 تم تسجيل توصيل وسريع لكافة أنحاء البلاد.
+                            🚚 شحن سريع وأمن لكافة أنحاء البلاد.
                           </p>
                         </div>
 
