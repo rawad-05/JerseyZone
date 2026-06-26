@@ -678,7 +678,7 @@ export default function App() {
                       onClick={() => setMobileMenuOpen(false)}
                       className="py-2 hover:text-white border-b border-border-custom/50 flex justify-between"
                     >
-                      <span>[ تصفح الكتالوج ]</span>
+                      <span>[  تصفح المنتجات ]</span>
                       <ChevronLeft size={16} />
                     </a>
                     <a 
@@ -732,7 +732,7 @@ export default function App() {
                       
                       <div className="lg:col-span-8 space-y-6 text-right">
                         <div className="inline-block font-mono text-xs uppercase tracking-[0.3em] text-accent-blue bg-secondary-bg/80 border border-border-custom px-4 py-1.5">
-                          [ إصدارات الكتالوج: السلسلة 01 ]
+                          [ الوجهة الأفضل لمحبين كرة القدم ]
                         </div>
                         <h1 className="font-display text-4xl sm:text-6xl md:text-8xl tracking-tight leading-tight text-white font-black max-w-4xl uppercase">
                           {settings.heroHeadline}
@@ -746,7 +746,7 @@ export default function App() {
                             onClick={() => navigate("#shop")}
                             className="bg-white hover:bg-accent-blue text-primary-bg font-mono text-sm uppercase tracking-widest px-10 py-5 transition-all duration-300 font-bold border border-white hover:border-accent-blue cursor-pointer flex items-center justify-between group"
                           >
-                            <span>عرض الأطقم كاملة</span>
+                            <span>  تسوق الأن</span>
                             <ChevronLeft size={18} className="mr-4 transform group-hover:-translate-x-1.5 transition-transform" />
                           </button>
                           <button 
@@ -756,7 +756,7 @@ export default function App() {
                             }}
                             className="border border-border-custom hover:border-white text-white font-mono text-sm uppercase tracking-widest px-8 py-5 transition-colors cursor-pointer"
                           >
-                            [ تصفح الإصدارات الجديدة ]
+                            [   تصفح احدث الأطقم ]
                           </button>
                         </div>
                       </div>
@@ -786,7 +786,7 @@ export default function App() {
                       <div className="flex flex-col md:flex-row justify-between items-baseline mb-12 gap-4">
                         <div>
                           <span className="font-mono text-xs uppercase tracking-widest text-accent-blue">[ أحدث المنتجات المضافة ]</span>
-                          <h2 className="font-display text-4xl md:text-5xl tracking-tight text-white uppercase mt-1">إصدارات مميزة وحصرية</h2>
+                          <h2 className="font-display text-4xl md:text-5xl tracking-tight text-white uppercase mt-1">  الأكثر طلباً</h2>
                         </div>
                         <a href="#shop" className="font-mono text-xs text-accent-blue hover:text-white uppercase tracking-wider transition-colors flex items-center gap-1">
                           <span>استكشف المخزن كاملاً</span>
@@ -854,7 +854,7 @@ export default function App() {
                 >
                   {/* Shop Header */}
                   <div className="mb-12 border-b border-border-custom pb-8">
-                    <span className="font-mono text-xs text-accent-blue uppercase tracking-widest">[ مستودع المنتجات ]</span>
+                    <span className="font-mono text-xs text-accent-blue uppercase tracking-widest">[  تسوق الأن ]</span>
                     <h1 className="font-display text-5xl md:text-7xl tracking-tighter text-white uppercase mt-2">
                       جيرسي زون — جميع الأطقم
                     </h1>
@@ -1291,7 +1291,7 @@ export default function App() {
                       <div className="bg-secondary-bg/30 border border-border-custom p-6 md:p-8 space-y-4">
                         <div className="flex justify-between font-mono text-xs text-text-secondary">
                           <span>الخدمات اللوجستية</span>
-                          <span className="text-green-400 font-bold">توصيل مجاني</span>
+                          <span className="text-green-400 font-bold"> سعر التوصيل يحدد لاحقا حسب المنطقة</span>
                         </div>
                         <div className="flex justify-between font-mono text-xs text-text-secondary border-b border-border-custom/50 pb-4">
                           <span>المجموع الفرعي المؤمّن</span>
@@ -1740,11 +1740,11 @@ export default function App() {
                                     className="w-full bg-primary-bg border border-border-custom text-white px-4 py-2.5 text-xs font-mono focus:outline-hidden focus:border-white text-right"
                                   >
                                     <option value="">اختر التصنيف...</option>
-                                    <option value="La Liga">الدوري الإسباني</option>
-                                    <option value="Premier League">الدوري الإنجليزي</option>
-                                    <option value="Ligue 1">الدوري الفرنسي</option>
-                                    <option value="African Leagues">الدوريات الأفريقية</option>
-                                    <option value="Classic jerseys">الأطقم الكلاسيكية</option>
+                                    <option value="الدوري الإسباني">الدوري الإسباني</option>
+                                    <option value="الدوري الإنجليزي">الدوري الإنجليزي</option>
+                                    <option value="الدوري الفرنسي">الدوري الفرنسي</option>
+                                    <option value="الدوريات الإفريقية">الدوريات الأفريقية</option>
+                                    <option value="الأطقم الكلاسيكية">الأطقم الكلاسيكية</option>
                                   </select>
                                 </div>
 
