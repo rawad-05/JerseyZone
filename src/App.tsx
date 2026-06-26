@@ -40,10 +40,36 @@ import {
   Upload
 } from "lucide-react";
 
+// --- SAFE LOCAL STORAGE FOR IFRAMES & MOBILE BROWSERS ---
+const safeLocalStorage = {
+  getItem: (key: string): string | null => {
+    try {
+      return localStorage.getItem(key);
+    } catch (e) {
+      console.warn("Storage item fetch failed:", e);
+      return null;
+    }
+  },
+  setItem: (key: string, value: string): void => {
+    try {
+      localStorage.setItem(key, value);
+    } catch (e) {
+      console.warn("Storage item save failed:", e);
+    }
+  },
+  removeItem: (key: string): void => {
+    try {
+      localStorage.removeItem(key);
+    } catch (e) {
+      console.warn("Storage item removal failed:", e);
+    }
+  }
+};
+
 export default function App() {
   // --- STATE WITH LOCAL CACHE FALLBACKS ---
   const [products, setProducts] = useState<Product[]>(() => {
-    const saved = localStorage.getItem("jz_products");
+    const saved = safeLocalStorage.getItem("jz_products");
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -58,7 +84,7 @@ export default function App() {
   });
 
   const [orders, setOrders] = useState<Order[]>(() => {
-    const saved = localStorage.getItem("jz_orders");
+    const saved = safeLocalStorage.getItem("jz_orders");
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -73,7 +99,7 @@ export default function App() {
   });
 
   const [settings, setSettings] = useState<StoreSettings>(() => {
-    const saved = localStorage.getItem("jz_settings");
+    const saved = safeLocalStorage.getItem("jz_settings");
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -88,7 +114,7 @@ export default function App() {
   });
 
   const [cart, setCart] = useState<CartItem[]>(() => {
-    const saved = localStorage.getItem("jz_cart");
+    const saved = safeLocalStorage.getItem("jz_cart");
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -107,7 +133,7 @@ export default function App() {
   // --- SYNC TO LOCAL STORAGE CACHE ---
   useEffect(() => {
     if (Array.isArray(products) && products.length > 0) {
-      localStorage.setItem("jz_products", JSON.stringify(products));
+      safeLocalStorage.setItem("jz_products", JSON.stringify(products));
     }
   }, [products]);
 
@@ -116,19 +142,19 @@ export default function App() {
 
   useEffect(() => {
     if (Array.isArray(orders)) {
-      localStorage.setItem("jz_orders", JSON.stringify(orders));
+      safeLocalStorage.setItem("jz_orders", JSON.stringify(orders));
     }
   }, [orders]);
 
   useEffect(() => {
     if (settings && typeof settings === "object" && typeof settings.storeName === "string") {
-      localStorage.setItem("jz_settings", JSON.stringify(settings));
+      safeLocalStorage.setItem("jz_settings", JSON.stringify(settings));
     }
   }, [settings]);
 
   useEffect(() => {
     if (Array.isArray(cart)) {
-      localStorage.setItem("jz_cart", JSON.stringify(cart));
+      safeLocalStorage.setItem("jz_cart", JSON.stringify(cart));
     }
   }, [cart]);
 
@@ -231,7 +257,7 @@ export default function App() {
 
   // --- DEVICE SECURITY STATE ---
   const [isDeviceAuthorized, setIsDeviceAuthorized] = useState<boolean>(() => {
-    return localStorage.getItem("jz_device_authorized") === "true";
+    return safeLocalStorage.getItem("jz_device_authorized") === "true";
   });
   const [deviceRegCode, setDeviceRegCode] = useState("");
   const [deviceRegError, setDeviceRegError] = useState("");
@@ -326,7 +352,7 @@ export default function App() {
   const handleRegisterDevice = (e: React.FormEvent) => {
     e.preventDefault();
     if (deviceRegCode === "rawad28112005") {
-      localStorage.setItem("jz_device_authorized", "true");
+      safeLocalStorage.setItem("jz_device_authorized", "true");
       setIsDeviceAuthorized(true);
       setDeviceRegError("");
       setDeviceRegCode("");
@@ -338,7 +364,7 @@ export default function App() {
 
   const handleRevokeDeviceAuth = () => {
     if (window.confirm("هل أنت متأكد من إلغاء تفويض هذا الجهاز؟ سيتم إخفاء بوابة الأدمن تماماً عن هذا الجهاز.")) {
-      localStorage.removeItem("jz_device_authorized");
+      safeLocalStorage.removeItem("jz_device_authorized");
       setIsDeviceAuthorized(false);
       setIsAdminAuth(false);
       setAdminPassword("");

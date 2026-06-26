@@ -6,7 +6,11 @@ export function parseHash(hashStr: string) {
     queryStr.split("&").forEach((param) => {
       const [key, val] = param.split("=");
       if (key) {
-        query[decodeURIComponent(key)] = decodeURIComponent(val || "");
+        try {
+          query[decodeURIComponent(key)] = decodeURIComponent(val || "");
+        } catch (e) {
+          query[key] = val || "";
+        }
       }
     });
   }
