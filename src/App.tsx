@@ -46,7 +46,10 @@ export default function App() {
     const saved = localStorage.getItem("jz_products");
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
       } catch (e) {
         console.error("Error loading products", e);
       }
@@ -58,7 +61,10 @@ export default function App() {
     const saved = localStorage.getItem("jz_orders");
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed;
+        }
       } catch (e) {
         console.error("Error loading orders", e);
       }
@@ -70,7 +76,10 @@ export default function App() {
     const saved = localStorage.getItem("jz_settings");
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === "object" && typeof parsed.storeName === "string") {
+          return parsed;
+        }
       } catch (e) {
         console.error("Error loading settings", e);
       }
@@ -82,7 +91,10 @@ export default function App() {
     const saved = localStorage.getItem("jz_cart");
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed;
+        }
       } catch (e) {
         console.error("Error loading cart", e);
       }
@@ -94,22 +106,30 @@ export default function App() {
 
   // --- SYNC TO LOCAL STORAGE CACHE ---
   useEffect(() => {
-    localStorage.setItem("jz_products", JSON.stringify(products));
+    if (Array.isArray(products) && products.length > 0) {
+      localStorage.setItem("jz_products", JSON.stringify(products));
+    }
   }, [products]);
 
   // Handle setting initial state for localized category
   const [selectedCategory, setSelectedCategory] = useState("الكل");
 
   useEffect(() => {
-    localStorage.setItem("jz_orders", JSON.stringify(orders));
+    if (Array.isArray(orders)) {
+      localStorage.setItem("jz_orders", JSON.stringify(orders));
+    }
   }, [orders]);
 
   useEffect(() => {
-    localStorage.setItem("jz_settings", JSON.stringify(settings));
+    if (settings && typeof settings === "object" && typeof settings.storeName === "string") {
+      localStorage.setItem("jz_settings", JSON.stringify(settings));
+    }
   }, [settings]);
 
   useEffect(() => {
-    localStorage.setItem("jz_cart", JSON.stringify(cart));
+    if (Array.isArray(cart)) {
+      localStorage.setItem("jz_cart", JSON.stringify(cart));
+    }
   }, [cart]);
 
   // --- FETCH DATA FROM FIRESTORE ON STARTUP ---
