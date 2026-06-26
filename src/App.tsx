@@ -2,6 +2,15 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Product, CartItem, Order, StoreSettings } from "./types";
 import { DEFAULT_PRODUCTS, DEFAULT_SETTINGS } from "./defaultData";
+import { 
+  getProductsFromDb, 
+  saveProductToDb, 
+  deleteProductFromDb, 
+  getOrdersFromDb, 
+  saveOrderToDb, 
+  getSettingsFromDb, 
+  saveSettingsToDb 
+} from "./firebase";
 import { parseHash, formatPrice } from "./utils";
 import { 
   ShoppingBag, 
@@ -32,7 +41,7 @@ import {
 } from "lucide-react";
 
 export default function App() {
-  // --- LOCAL STORAGE PERSISTED STATE ---
+  // --- STATE WITH LOCAL CACHE FALLBACKS ---
   const [products, setProducts] = useState<Product[]>(() => {
     const saved = localStorage.getItem("jz_products");
     if (saved) {
@@ -81,7 +90,9 @@ export default function App() {
     return [];
   });
 
-  // --- SYNC TO LOCAL STORAGE ---
+  const [isLoadingDb, setIsLoadingDb] = useState(true);
+
+  // --- SYNC TO LOCAL STORAGE CACHE ---
   useEffect(() => {
     localStorage.setItem("jz_products", JSON.stringify(products));
   }, [products]);
@@ -100,6 +111,43 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem("jz_cart", JSON.stringify(cart));
   }, [cart]);
+
+  // --- FETCH DATA FROM FIRESTORE ON STARTUP ---
+  useEffect(() => {
+    async function loadInitialData() {
+      try {
+        setIsLoadingDb(true);
+        
+        // Load products
+        let dbProducts = await getProductsFromDb();
+        if (dbProducts.length === 0) {
+          // No products in Firestore yet, write DEFAULT_PRODUCTS so it is populated
+          const promises = DEFAULT_PRODUCTS.map(p => saveProductToDb(p));
+          await Promise.all(promises);
+          dbProducts = DEFAULT_PRODUCTS;
+        }
+        setProducts(dbProducts);
+
+        // Load orders
+        const dbOrders = await getOrdersFromDb();
+        dbOrders.sort((a, b) => b.id.localeCompare(a.id));
+        setOrders(dbOrders);
+
+        // Load settings
+        let dbSettings = await getSettingsFromDb();
+        if (!dbSettings) {
+          await saveSettingsToDb(DEFAULT_SETTINGS);
+          dbSettings = DEFAULT_SETTINGS;
+        }
+        setSettings(dbSettings);
+      } catch (err) {
+        console.error("Error loading data from Firestore: ", err);
+      } finally {
+        setIsLoadingDb(false);
+      }
+    }
+    loadInitialData();
+  }, []);
 
   // --- ROUTING SYSTEM ---
   const [hash, setHash] = useState(window.location.hash || "#home");
@@ -284,26 +332,34 @@ export default function App() {
 
     if (editingProduct) {
       // Edit mode
+      const updatedProduct = {
+        ...editingProduct,
+        name: formName,
+        price: parsedPrice,
+        category: formCategory,
+        description: formDescription,
+        image: formImage,
+        images: supplementaryImagesFiltered,
+        sizes: formSizes,
+        colors: colorsArray,
+        featured: formFeatured,
+        active: formActive
+      };
+
+      saveProductToDb(updatedProduct)
+        .then(() => showToast("[ تم تحديث المنتج بنجاح في السحابة ]"))
+        .catch(err => {
+          console.error("Error saving product to DB: ", err);
+          showToast("[ خطأ: فشل في تحديث المنتج في السحابة ]");
+        });
+
       const updatedProducts = products.map(p => {
         if (p.id === editingProduct.id) {
-          return {
-            ...p,
-            name: formName,
-            price: parsedPrice,
-            category: formCategory,
-            description: formDescription,
-            image: formImage,
-            images: supplementaryImagesFiltered,
-            sizes: formSizes,
-            colors: colorsArray,
-            featured: formFeatured,
-            active: formActive
-          };
+          return updatedProduct;
         }
         return p;
       });
       setProducts(updatedProducts);
-      showToast("[ تم تحديث المنتج بنجاح ]");
     } else {
       // Add mode
       const newId = formName.toLowerCase().replace(/[^a-z0-9\u0600-\u06FF]+/g, "-");
@@ -320,8 +376,15 @@ export default function App() {
         featured: formFeatured,
         active: formActive
       };
+
+      saveProductToDb(newProduct)
+        .then(() => showToast("[ تم تأمين المنتج الجديد في السحابة بنجاح ]"))
+        .catch(err => {
+          console.error("Error saving new product to DB: ", err);
+          showToast("[ خطأ: فشل في حفظ المنتج الجديد في السحابة ]");
+        });
+
       setProducts([...products, newProduct]);
-      showToast("[ تم تأمين المنتج الجديد في الكتالوج ]");
     }
 
     // Reset Form
@@ -360,8 +423,13 @@ export default function App() {
 
   const handleDeleteProduct = (productId: string) => {
     if (window.confirm("هل أنت متأكد تماماً من رغبتك في حذف هذا المنتج؟")) {
+      deleteProductFromDb(productId)
+        .then(() => showToast("[ تم حذف المنتج من الأرشيف والسحابة ]"))
+        .catch(err => {
+          console.error("Error deleting from DB: ", err);
+          showToast("[ خطأ: فشل في حذف المنتج من السحابة ]");
+        });
       setProducts(products.filter(p => p.id !== productId));
-      showToast("[ تم حذف المنتج من الأرشيف ]");
     }
   };
 
@@ -396,7 +464,15 @@ export default function App() {
       status: "Pending"
     };
 
-    // Save order in orders array
+    // Save order in orders array and Firestore db
+    saveOrderToDb(newOrder)
+      .then(() => {
+        showToast("[ تم تسجيل طلبك بنجاح في قاعدة البيانات ]");
+      })
+      .catch(err => {
+        console.error("Error saving order to Firestore: ", err);
+      });
+
     setOrders([newOrder, ...orders]);
 
     // Build Whatsapp text and open URL
@@ -450,8 +526,20 @@ export default function App() {
   return (
     <div className="min-h-screen flex flex-col bg-primary-bg text-text-primary selection:bg-accent-blue selection:text-primary-bg antialiased font-sans" dir="rtl">
       
-      {/* MAINTENANCE MODE SHIELD */}
-      {isMaintenanceModeActive ? (
+      {/* GLOBAL DATABASE LOADER / MAINTENANCE MODE SHIELD */}
+      {isLoadingDb ? (
+        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-primary-bg min-h-screen">
+          <div className="max-w-md p-10 flex flex-col items-center">
+            <div className="w-10 h-10 border-2 border-accent-blue border-t-transparent animate-spin rounded-full mb-6"></div>
+            <h1 className="font-display text-4xl tracking-tight mb-2 uppercase text-white animate-pulse">
+              JERSEY ZONE
+            </h1>
+            <p className="font-mono text-[10px] text-accent-blue tracking-widest uppercase">
+              [ جاري الاتصال بقاعدة البيانات السحابية... ]
+            </p>
+          </div>
+        </div>
+      ) : isMaintenanceModeActive ? (
         <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-primary-bg min-h-screen">
           <div className="max-w-md border border-border-custom bg-secondary-bg/50 p-10 relative">
             <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-accent-blue text-primary-bg font-mono text-xs px-4 py-1 uppercase tracking-widest font-bold">
@@ -2020,14 +2108,22 @@ export default function App() {
                                       <select
                                         value={order.status}
                                         onChange={(e) => {
+                                          const nextStatus = e.target.value as any;
+                                          const updatedOrder = { ...order, status: nextStatus };
+                                          saveOrderToDb(updatedOrder)
+                                            .then(() => showToast(`[ تم تحديث حالة الطلب ${order.id} بنجاح ]`))
+                                            .catch(err => {
+                                              console.error("Error updating order status: ", err);
+                                              showToast("[ خطأ: فشل تحديث حالة الطلب بالسحابة ]");
+                                            });
+
                                           const updatedOrders = orders.map(o => {
                                             if (o.id === order.id) {
-                                              return { ...o, status: e.target.value as any };
+                                              return updatedOrder;
                                             }
                                             return o;
                                           });
                                           setOrders(updatedOrders);
-                                          showToast(`[ تم تحديث حالة الطلب ${order.id} بنجاح ]`);
                                         }}
                                         className="bg-primary-bg border border-border-custom text-white text-[10px] font-mono px-2 py-1 uppercase focus:outline-hidden focus:border-white text-right"
                                       >
@@ -2157,6 +2253,24 @@ export default function App() {
                                 }`}
                               >
                                 {settings.maintenanceMode ? "[ الحالة: نشط ]" : "[ الحالة: غير نشط ]"}
+                              </button>
+                            </div>
+
+                            {/* Save Button */}
+                            <div className="pt-6 border-t border-border-custom/50">
+                              <button
+                                onClick={() => {
+                                  saveSettingsToDb(settings)
+                                    .then(() => showToast("[ تم حفظ الإعدادات وتطبيقها في السحابة بنجاح ]"))
+                                    .catch(err => {
+                                      console.error("Error saving settings: ", err);
+                                      showToast("[ خطأ: فشل في حفظ الإعدادات في السحابة ]");
+                                    });
+                                }}
+                                className="w-full bg-white hover:bg-accent-blue text-primary-bg font-mono text-xs uppercase tracking-widest py-3 font-bold transition-all cursor-pointer flex items-center justify-center gap-2"
+                              >
+                                <Save size={14} />
+                                <span>حفظ وتطبيق جميع الإعدادات</span>
                               </button>
                             </div>
 

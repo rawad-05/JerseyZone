@@ -1,0 +1,69 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "A jersey product offered by Jersey Zone.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "price": { "type": "number" },
+        "category": { "type": "string" },
+        "description": { "type": "string" },
+        "image": { "type": "string" },
+        "images": { "type": "array" },
+        "sizes": { "type": "array" },
+        "colors": { "type": "array" },
+        "featured": { "type": "boolean" },
+        "active": { "type": "boolean" }
+      },
+      "required": ["id", "name", "price", "category", "image"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "An order submitted by a customer.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "customerName": { "type": "string" },
+        "customerPhone": { "type": "string" },
+        "city": { "type": "string" },
+        "district": { "type": "string" },
+        "detailedAddress": { "type": "string" },
+        "cart": { "type": "array" },
+        "subtotal": { "type": "number" },
+        "shipping": { "type": "number" },
+        "total": { "type": "number" },
+        "status": { "type": "string", "enum": ["Pending", "Completed", "Cancelled"] },
+        "timestamp": { "type": "string" }
+      },
+      "required": ["id", "customerName", "customerPhone", "city", "district", "total", "status"]
+    },
+    "StoreSettings": {
+      "title": "StoreSettings",
+      "description": "Global store configuration and metadata.",
+      "type": "object",
+      "properties": {
+        "storeName": { "type": "string" },
+        "heroHeadline": { "type": "string" },
+        "heroSubheadline": { "type": "string" },
+        "maintenanceMode": { "type": "boolean" }
+      },
+      "required": ["storeName", "heroHeadline", "heroSubheadline", "maintenanceMode"]
+    }
+  },
+  "firestore": {
+    "products/{productId}": {
+      "schema": "Product",
+      "description": "Collection of jersey products."
+    },
+    "orders/{orderId}": {
+      "schema": "Order",
+      "description": "Collection of customer orders."
+    },
+    "settings/{settingId}": {
+      "schema": "StoreSettings",
+      "description": "Global settings. Typically 'main' is used."
+    }
+  }
+}
