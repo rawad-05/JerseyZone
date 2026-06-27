@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { 
-  getFirestore, 
+  initializeFirestore, 
   collection, 
   doc, 
   getDocs, 
@@ -19,7 +19,9 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app, "ai-studio-jerseyzone-2e5d9082-7a02-43c1-9921-55c8da46738c");
+export const db = initializeFirestore(app, {
+  experimentalForceLongPolling: true
+}, "ai-studio-jerseyzone-2e5d9082-7a02-43c1-9921-55c8da46738c");
 
 // Fetch all products
 export async function getProductsFromDb(): Promise<Product[]> {

@@ -1,9 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@100;200;300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Cairo", sans-serif;
-  --font-display: "Cairo", sans-serif;
+  --font-sans: "IBM Plex Sans Arabic", sans-serif;
+  --font-display: "IBM Plex Sans Arabic", sans-serif;
   --font-mono: "Space Mono", monospace;
 
   --color-primary-bg: #2B3A4A;
